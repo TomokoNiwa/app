@@ -87,6 +87,14 @@
         </div>
         <button onclick="addBuilderRow()" style="background:none; border:2px dashed var(--sub-color); width:100%; padding:10px; border-radius:15px; color:var(--main-color); margin:10px 0; cursor:pointer;">＋ 項目を追加</button>
         <input type="url" id="recipeImg" placeholder="画像URL">
+        <select id="recipeCategory">
+            <option value="🍖 お肉">🍖 お肉</option>
+            <option value="🐟 魚">🐟 魚</option>
+            <option value="🥗 野菜">🥗 野菜</option>
+            <option value="🍝 麺・主食">🍝 麺・主食</option>
+            <option value="🍰 スイーツ">🍰 スイーツ</option>
+            <option value="✨ その他">✨ その他</option>
+        </select>
         <input type="url" id="recipeUrl" placeholder="参考サイトURL"> 
         <textarea id="recipeMemo" rows="3" placeholder="コツ・メモ"></textarea>
         <button class="btn-primary" onclick="saveRecipe()">✨ 登録して保存</button>
@@ -134,19 +142,35 @@
         URL.revokeObjectURL(url);
     }
 
-    function update() {
-        const kw = document.getElementById('kwInput').value.toLowerCase();
-        const filtered = recipes.filter(r => {
-            const mK = !kw || r.title.includes(kw) || r.ingredients.some(i => i.name.includes(kw));
-            const mT = selectedTags.size === 0 || Array.from(selectedTags).every(t => r.ingredients.some(i => i.name.includes(t)));
-            return mK && mT;
-        });
-        document.getElementById('grid').innerHTML = filtered.map((r, idx) => `
-            <div class="recipe-card" onclick="openModal(${recipes.indexOf(r)})">
-                <div class="recipe-img-box">${r.img ? `<img src="${r.img}">` : `<span style="font-size:1.8rem;">🍳</span>`}</div>
-                <div class="recipe-info">${r.title}</div>
-            </div>`).join('');
-    }
+function update() {
+    const kw = document.getElementById('kwInput').value.toLowerCase();
+    
+    // 1. 検索とタグで絞り込み
+    const filtered = recipes.filter(r => {
+        const mK = !kw || r.title.includes(kw) || r.ingredients.some(i => i.name.includes(kw));
+        const mT = selectedTags.size === 0 || Array.from(selectedTags).every(t => r.ingredients.some(i => i.name.includes(t)));
+        return mK && mT;
+    });
+
+    // 2. 表示用に「新しい順」に並び替え
+    const displayList = [...filtered].reverse();
+
+    // 3. 画面（グリッド）に表示
+    document.getElementById('grid').innerHTML = displayList.map((r) => `
+        <div class="recipe-card" onclick="openModal(${recipes.indexOf(r)})">
+            <div class="recipe-img-box">
+                ${r.img ? `<img src="${r.img}">` : `<span style="font-size:1.8rem;">🍳</span>`}
+            </div>
+            <div class="recipe-info">
+                <div style="font-size:0.7rem; color:var(--main-color); margin-bottom:2px;">
+                    ${r.category || '✨ その他'}
+                </div>
+                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${r.title}
+                </div>
+            </div>
+        </div>`).join('');
+}
 
     function openModal(index) {
         const r = recipes[index];
@@ -184,18 +208,34 @@
         }
     }
 
-    function saveRecipe() {
-        const title = document.getElementById('recipeName').value;
-        if(!title) return alert("料理名を入れてね");
-        const names = document.querySelectorAll('.b-ing-name');
-        const amounts = document.querySelectorAll('.b-ing-amount');
-        const types = document.querySelectorAll('.b-ing-type');
-        const ings = [];
-        names.forEach((n, i) => { if(n.value) ings.push({name: n.value, amount: amounts[i].value, type: types[i].value}); });
-        recipes.push({ title, img: document.getElementById('recipeImg').value, url: document.getElementById('recipeUrl').value, ingredients: ings, memo: document.getElementById('recipeMemo').value });
-        localStorage.setItem('myRecipes', JSON.stringify(recipes));
-        location.reload();
-    }
+function saveRecipe() {
+    const title = document.getElementById('recipeName').value;
+    if(!title) return alert("料理名を入れてね");
+
+    // 追加：選択されたカテゴリを取得
+    const category = document.getElementById('recipeCategory').value;
+
+    const names = document.querySelectorAll('.b-ing-name');
+    const amounts = document.querySelectorAll('.b-ing-amount');
+    const types = document.querySelectorAll('.b-ing-type');
+    const ings = [];
+    names.forEach((n, i) => { 
+        if(n.value) ings.push({name: n.value, amount: amounts[i].value, type: types[i].value}); 
+    });
+
+    // recipes.push の中に 「category」 を追加しました
+    recipes.push({ 
+        title, 
+        category, // ←ここが追加ポイント！
+        img: document.getElementById('recipeImg').value, 
+        url: document.getElementById('recipeUrl').value, 
+        ingredients: ings, 
+        memo: document.getElementById('recipeMemo').value 
+    });
+
+    localStorage.setItem('myRecipes', JSON.stringify(recipes));
+    location.reload();
+}
 
     function addBuilderRow() {
         const div = document.createElement('div'); div.style = "display:flex; gap:5px; margin-bottom:8px;";
