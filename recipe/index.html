@@ -11,12 +11,15 @@
     <link rel="stylesheet" href="css/style.css">  
 </head>
 <body>
+<body>
 
 <header class="app-header">
     <div class="app-title">🍓 My Kitchen Studio</div>
     <div class="menu-icon" onclick="toggleMenu()">☰</div>
     <div class="header-tools" id="headerTools">
         <button class="btn-load-ui" onclick="document.getElementById('importFile').click()">📂 読込</button>
+        <button class="btn-export-ui" onclick="exportData()">💾 保存</button>
+        
         <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(this)">
         <div class="mode-switch">
             <button class="mode-btn active" id="view-tab" onclick="switchMode('view')">📖 見る</button>
