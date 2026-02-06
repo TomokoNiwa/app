@@ -17,6 +17,27 @@
         document.getElementById('headerTools').classList.remove('open');
     }
 
+    // データの書き出し（エクスポート）
+    function exportData() {
+        if (recipes.length === 0 && Object.keys(masterItems).length === 0) {
+            alert("保存するデータがありません。");
+            return;
+        }
+        // レシピとマスター両方を保存対象にする
+        const exportObj = {
+            recipes: recipes,
+            master: masterItems
+        };
+        const data = JSON.stringify(exportObj, null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'my_recipes_backup.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
     function update() {
         const kw = document.getElementById('kwInput').value.toLowerCase();
         const filtered = recipes.filter(r => {
@@ -39,13 +60,10 @@
         document.getElementById('modalContent').innerHTML = `
             <div style="padding:20px;">
                 <h2 style="color:var(--main-color); margin-top:0; margin-bottom:10px;">${r.title}</h2>
-                
                 <div style="width:100%; max-height:250px; overflow:hidden; border-radius:15px; margin-bottom:15px; background:#fdf2f2; display:flex; align-items:center; justify-content:center;">
                     ${r.img ? `<img src="${r.img}" style="width:100%; height:auto; object-fit:cover;">` : `<span style="font-size:3rem; padding:20px;">🍳</span>`}
                 </div>
-
                 <p style="font-weight:bold; margin-bottom:10px;">2人前</p>
-                
                 <div style="margin-bottom:15px;">
                     <strong>🛒 材料</strong>
                     <ul style="padding-left:20px; margin-top:5px;">${mains.length ? mains.map(i=>`<li>${i.name}: ${i.amount}</li>`).join('') : '<li>なし</li>'}</ul>
@@ -55,9 +73,7 @@
                     <ul style="padding-left:20px; margin-top:5px;">${subs.length ? subs.map(i=>`<li>${i.name}: ${i.amount}</li>`).join('') : '<li>なし</li>'}</ul>
                 </div>
                 ${r.memo ? `<div style="background:#fff9db; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9rem; white-space:pre-wrap;">${r.memo}</div>` : ''}
-                
-                ${r.url ? `<a href="${r.url}" target="_blank" style="display:block; text-align:center; margin-bottom:15px; color:var(--accent); text-decoration:none; font-weight:bold;">🔗 参考サイトを見る</a>` : ''}
-
+                ${r.url ? `<a href="${r.url}" target="_blank" style="display:block; text-align:center; margin-bottom:15px; color:var(--accent); text-decoration:none; font-weight:bold;">🔗 作り方を見る</a>` : ''}
                 <button class="btn-primary" onclick="closeModal()">閉じる</button>
                 <button class="btn-delete" onclick="deleteRecipe(${index})">🗑️ このレシピを削除する</button>
             </div>`;
@@ -92,8 +108,13 @@
     }
 
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    
     function renderPalette() { 
         const p = document.getElementById('palette'); p.innerHTML = '';
+        if (Object.keys(masterItems).length === 0) {
+            p.innerHTML = '<p style="font-size:0.8rem; color:#999;">読込ボタンから材料マスターを読み込んでください</p>';
+            return;
+        }
         for (const [cat, items] of Object.entries(masterItems)) {
             const div = document.createElement('div');
             div.innerHTML = `<div class="cat-title">${cat}</div><div class="ing-tags"></div>`;
@@ -105,19 +126,30 @@
             p.appendChild(div);
         }
     }
+
     function handleImport(input) {
         const reader = new FileReader();
         reader.onload = () => {
             try {
                 const data = JSON.parse(reader.result);
-                if(Array.isArray(data)) recipes = data; else masterItems = data;
+                // インポート形式の判別（バックアップファイルか、単体リストか）
+                if(data.recipes && data.master) {
+                    recipes = data.recipes;
+                    masterItems = data.master;
+                } else if(Array.isArray(data)) {
+                    recipes = data;
+                } else {
+                    masterItems = data;
+                }
                 localStorage.setItem('myRecipes', JSON.stringify(recipes));
                 localStorage.setItem('myMaster', JSON.stringify(masterItems));
+                alert("読み込みが完了しました！");
                 location.reload();
             } catch(e) { alert("形式が正しくありません"); }
         };
         reader.readAsText(input.files[0]);
     }
+
     function updateDatalist() {
         document.getElementById('masterList').innerHTML = Object.values(masterItems).flat().map(i => `<option value="${i}">`).join('');
     }
