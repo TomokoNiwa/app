@@ -4,7 +4,7 @@
 日々の暮らしと心を豊かにするためのアプリケーション群（Application Portal）の管理リポジトリです。
 
 ## 公開URL
-[私のウェブサイト](https://tomokoniwa.github.io/app/)
+[Application Portal](https://tomokoniwa.github.io/app/)
 
 ## 内容
 yorisoi (寄り添い): 大切な家族のための安心ボード。PWA対応によりホーム画面から1タップで起動。スケジュール共有や見守り機能を提供します。
